@@ -1,0 +1,38 @@
+SIMPLE  =                    T /image conforms to FITS standard                 
+BITPIX  =                    8 /bits per data value                             
+NAXIS   =                    3 /number of axes                                  
+NAXIS1  =                21000 /                                                
+NAXIS2  =                  410 /frequency                                       
+NAXIS3  =                    2 /Polarization. 0 is RCP and 1 is LCP             
+EXTEND  =                    F /File contains no extensions                     
+DATE    = '2026-01-01'         /                                                
+CONTENT = '2026-01-01       -1:48:55 AMATERAS LCP and RCP' /Title of image      
+ORIGIN  = 'PPARC TOHOKU University' /Organization name                          
+TELESCOP= 'IPRT    '           /Telescope name                                  
+INSTRUME= 'AMATERAS'           /Name of the spectrometer                        
+OBJECT  = 'Sun     '           /                                                
+DATE-OBS= '2025-12-31'         /date observation starts UT                      
+TIME-OBS= '23:48:55.000'       /time observation starts UT                      
+DATE-END= '2026-01-01'         /date observation ends UT                        
+TIME-END= '05:40:09.000'       /time observation ends UT                        
+BZERO   =              0.00000 /scaling offset                                  
+BSCALE  =              1.00000 /scaling factor                                  
+BUNIT   = '10*(dB from Quiet SUN)' /z-axis title                                
+DATAMIN =              0.00000 /Minimum element in image                        
+DATAMAX =              255.000 /Maximum element in image   255 or 65535         
+CTYPE1  = 'Time in UT'         /title of axis 1                                 
+CRPIX1  =                    0 /reference pixel of axis 1                       
+CRVAL1  =              0.00000 /value on axis 1 at the reference pixel          
+CDELT1  =              1.00352 /step between first and second elements in axis 1
+CTYPE2  = 'Frequency in MHz'   /title of axis 2                                 
+CRPIX2  =                    0 /reference pixel of axis 2                       
+CRVAL2  =              100.000 /value on axis 2 at the reference pixel          
+CDELT2  =             0.976562 /step between first and second elements in axis 2
+CTYPE3  = 'Polarization'       /title of axis 3                                 
+CRPIX3  =                    0 /reference pixel of axis 3                       
+CRVAL3  =              0.00000 /value on axis 3 at the reference pixel          
+CDELT3  =              1.00000 /step between first and second elements in axis 3
+COMMENT BUNIT=10*((Observed power [dBm]) - (Quiet SUN power [dBm]) + 3)         
+COMMENT qsun_bg_*.out.20251213                                                  
+COMMENT This fits file is Ver.1                                                 
+COMMENT Tohoku University, All rights reserved.                                 

@@ -1,0 +1,49 @@
+SIMPLE  =                    T /image conforms to FITS standard                 
+BITPIX  =                    8 /bits per data value                             
+NAXIS   =                    3 /number of axes                                  
+NAXIS1  =                 5700 /time                                            
+NAXIS2  =                 6553 /frequency                                       
+NAXIS3  =                    2 /Polarization. 0:RCP and 1:LCP                   
+EXTEND  =                    F /File contains no extensions                     
+DATE    = '2011-06-16'         /                                                
+CONTENT = 'AMATERAS LCP and RCP 08bit high-resolution data' /Title of image     
+ORIGIN  = 'PPARC Tohoku University' /Organization name                          
+TELESCOP= 'IPRT    '           /Name of radio telescope                         
+INSTRUME= 'AMATERAS'           /Name of the spectro-polarimeter                 
+OBJECT  = 'Sun     '           /                                                
+DATE-OBS= '2011-06-16'         /date observation starts UT                      
+TIME-OBS= '21:39:00'           /time observation starts UT                      
+DATE-END= '2011-06-16'         /date observation ends UT                        
+TIME-END= '21:40:00'           /time observation ends UT                        
+BZERO   =              0.00000 /scaling offset                                  
+BSCALE  =             0.100000 /scaling factor                                  
+BUNIT   = '[dB] from Quiet SUN level' /z-axis title                             
+DATAMIN =              0.00000 /Minimum element in image                        
+DATAMAX =              255.000 /Maximum element in image   255 or 65535         
+CTYPE1  = 'Time in UT'         /title of axis 1                                 
+CRPIX1  =                    0 /reference pixel of axis 1                       
+CRVAL1  =              0.00000 /value on axis 1 at the reference pixel          
+CDELT1  =      0.0100000000715 /step between first and second elements in axis 1
+CTYPE2  = 'Frequency in MHz'   /title of axis 2                                 
+CRPIX2  =                    0 /reference pixel of axis 2                       
+CRVAL2  =              100.097 /value on axis 2 at the reference pixel          
+CDELT2  =            0.0610352 /step between first and second elements in axis 2
+CTYPE3  = 'Polarization'       /title of axis 3                                 
+CRPIX3  =                    0 /reference pixel of axis 3                       
+CRVAL3  =              0.00000 /value on axis 3 at the reference pixel          
+CDELT3  =              1.00000 /step between first and second elements in axis 3
+COMMENT BUNIT=(Observed level) - (Quiet SUN level) + 3                          
+COMMENT Quiet SUN level [dBm] : "20110206_min.txt"                              
+COMMENT                                                                         
+COMMENT Detailed description of AMATERAS: Iwai et al. (2012), Solar Phys. 277(2)
+COMMENT  IPRT/AMATERAS:                                                         
+COMMENT  A New Metric Spectrum Observation System for Solar Radio Bursts        
+COMMENT  http://dx.doi.org/10.1007/s11207-011-9919-y                            
+COMMENT                                                                         
+COMMENT PPARC, Tohoku University, All rights reserved.                          
+COMMENT http://pparc.gp.tohoku.ac.jp/data/iprt/                                 
+COMMENT PI name: Hiroaki Misawa.                                                
+COMMENT Co-I name: Fuminori Tsuchiya.                                           
+COMMENT                                                                         
+HISTORY Version number: 01                                                      
+HISTORY Date/Time created: Fri Mar 13 06:39:30 2020                             
