@@ -84,26 +84,26 @@ def create_high08_metadata(folder_FITS, folder_metadata):
         "spectral_sampling_step_max",
         "spectral_resolution_min",
         "spectral_resolution_max",
-        "c1min",
-        "c1max",
-        "c2min",
-        "c2max",
-        "c3min",
-        "c3max",
-        "s_region",
-        "c1_resol_min",
-        "c1_resol_max",
-        "c2_resol_min",
-        "c2_resol_max",
-        "c3_resol_min",
-        "c3_resol_max",
+        # "c1min",
+        # "c1max",
+        # "c2min",
+        # "c2max",
+        # "c3min",
+        # "c3max",
+        # "s_region",
+        # "c1_resol_min",
+        # "c1_resol_max",
+        # "c2_resol_min",
+        # "c2_resol_max",
+        # "c3_resol_min",
+        # "c3_resol_max",
         "spatial_frame_type",
-        "incidence_min",
-        "incidence_max",
-        "emergence_min",
-        "emergence_max",
-        "phase_min",
-        "phase_max",
+        # "incidence_min",
+        # "incidence_max",
+        # "emergence_min",
+        # "emergence_max",
+        # "phase_min",
+        # "phase_max",
         "instrument_host_name",
         "instrument_name",
         "measurement_type",
@@ -117,17 +117,17 @@ def create_high08_metadata(folder_FITS, folder_metadata):
         "access_format",
         "access_estsize",
         "time_scale",
-        "access_md5",
+        # "access_md5",
         "thumbnail_url",
-        "species",
+        # "species",
         "publisher",
         "bib_reference",
         "target_region",
         "feature_name",
-        "datalink_url",
+        # "datalink_url",
         "receiver_name",
-        "relative_path",
-        "date_meridian",
+        # "relative_path",
+        # "date_meridian",
         "spectral_bandwith_min",
         "spectral_bandwith_max",
     ]  # create list of keys from template file
@@ -170,8 +170,10 @@ def create_high08_metadata(folder_FITS, folder_metadata):
         # Instrument metadata from FITS header
         try:
             meta["receiver_name"] = header["INSTRUME"]
-            meta["instrument_host_name"] = header["ORIGIN"]
+            meta["instrument_host_name"] = "Itate Observatory" #header["ORIGIN"]
             meta["instrument_name"] = header["TELESCOP"]  # INSTRUME?
+            meta["service_title"] = "iprt"
+            meta["publisher"] = "Tohoku University"
         except:
             print(f"Instrument error: check INSTRUME, ORIGIN and TELESCOP field. \
                     Skipping {filename}")
@@ -208,6 +210,7 @@ def create_high08_metadata(folder_FITS, folder_metadata):
             ).isoformat()[
                 :-3
             ]  # from file date but should be when the granule was introduced in the
+            meta["release_date"] = meta["modification_date"]
             meta["access_estsize"] = os.path.getsize(folder_FITS + filename) / 1e3
         except:
             print("Problem with file metadata. Skipping " + filename)
@@ -242,7 +245,7 @@ def create_high08_metadata(folder_FITS, folder_metadata):
         meta["target_region"] = "SolarWind#Heliosphere"
         meta["feature_name"] = "Solar radio bursts"
         meta["measurement_type"] = (
-            "phys.flux.density;em.radio;phys.polarization"  # hash separated list ?
+            "phot.flux.density;em.radio;phys.polarization"  # hash separated list ?
         )
         meta["processing_level"] = 1  # unit is db above quiet Sun lvl
 

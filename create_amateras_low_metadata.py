@@ -84,26 +84,7 @@ def create_low_metadata(folder_FITS, folder_metadata):
         "spectral_sampling_step_max",
         "spectral_resolution_min",
         "spectral_resolution_max",
-        "c1min",
-        "c1max",
-        "c2min",
-        "c2max",
-        "c3min",
-        "c3max",
-        "s_region",
-        "c1_resol_min",
-        "c1_resol_max",
-        "c2_resol_min",
-        "c2_resol_max",
-        "c3_resol_min",
-        "c3_resol_max",
         "spatial_frame_type",
-        "incidence_min",
-        "incidence_max",
-        "emergence_min",
-        "emergence_max",
-        "phase_min",
-        "phase_max",
         "instrument_host_name",
         "instrument_name",
         "measurement_type",
@@ -117,17 +98,14 @@ def create_low_metadata(folder_FITS, folder_metadata):
         "access_format",
         "access_estsize",
         "time_scale",
-        "access_md5",
+        # "access_md5",
         "thumbnail_url",
-        "species",
         "publisher",
         "bib_reference",
         "target_region",
         "feature_name",
-        "datalink_url",
+        # "datalink_url",
         "receiver_name",
-        "relative_path",
-        "date_meridian",
         "spectral_bandwith_min",
         "spectral_bandwith_max",
     ]  # create list of keys from template file
@@ -137,6 +115,8 @@ def create_low_metadata(folder_FITS, folder_metadata):
     )  # create an empty dictionnary with the needed kys
 
     for filename in list_file:  # iterate all files in folder_FITS
+
+
 
         if filename[-4:] == "fits":
             header = fits.getheader(folder_FITS + filename, 0)  # read FITS header
@@ -167,12 +147,16 @@ def create_low_metadata(folder_FITS, folder_metadata):
             print(folder_FITS + filename + " is not a 8 bit file")
             continue
 
+        meta["spatial_frame_type"] = "none"
+
         # Instrument metadata from FITS header
         try:
             meta["receiver_name"] = header["INSTRUME"]
-            meta["instrument_host_name"] = header["ORIGIN"]
+            meta["instrument_host_name"] = "Itate Observatory" #header["ORIGIN"]
             meta["instrument_name"] = header["TELESCOP"]  # INSTRUME?
-        except:
+            meta["service_title"] = "iprt"
+            meta["publisher"] = "Tohoku University"
+        except KeyError:
             print(f"Instrument error: check INSTRUME, ORIGIN and TELESCOP field. \
                     Skipping {filename}")
             continue
@@ -190,10 +174,12 @@ def create_low_metadata(folder_FITS, folder_metadata):
                 + "/"
                 + filename
             )
-        except:
+        except KeyError:
             print(f"DATE error: check DATE-OBS, TIME-OBS, DATE-END and \
                     TIME-END fields. Skipping {filename}")
             continue
+        except KeyError:
+            print(f"DATE error: Type error with filename")
 
         # Time metadata from file metadata
         try:
@@ -207,6 +193,7 @@ def create_low_metadata(folder_FITS, folder_metadata):
             ).isoformat()[
                 :-3
             ]  # from file date but should be when the granule was introduced in the
+            meta["release_date"] = meta["modification_date"]
             meta["access_estsize"] = os.path.getsize(folder_FITS + filename) / 1e3
         except:
             print("Problem with file metadata. Skipping " + filename)
@@ -223,8 +210,10 @@ def create_low_metadata(folder_FITS, folder_metadata):
                 + header["DATE"].replace("-", "")
                 + ".gif"
             )
-
-        except:
+        except KeyError:
+            print("Problem with DATE field in header. Skipping " + filename)
+            continue
+        except AttributeError:
             print("Problem with DATE field in header. Skipping " + filename)
             continue
 
@@ -239,7 +228,7 @@ def create_low_metadata(folder_FITS, folder_metadata):
         meta["target_region"] = "SolarWind#Heliosphere"
         meta["feature_name"] = "Solar radio bursts"
         meta["measurement_type"] = (
-            "phys.flux.density;em.radio;phys.polarization"  # hash separated list ?
+            "phot.flux.density;em.radio;phys.polarization"  # hash separated list ?
         )
         meta["processing_level"] = 1  # unit is db above quiet Sun lvl
 
@@ -252,7 +241,7 @@ def create_low_metadata(folder_FITS, folder_metadata):
 
         meta["time_scale"] = "UTC"
 
-        ##Spetral resolution
+        ## Spetral resolution
         meta["spectral_range_min"] = int(100e6)
         meta["spectral_range_max"] = int(500e6)
         meta["spectral_resolution_min"] = 500.0  # f/df
@@ -279,19 +268,66 @@ def create_low_metadata(folder_FITS, folder_metadata):
         print("Metadata successfully saved to " + json_name)
 
 
+def fromjsontocsv(metadatafolder="./lowmetadata/", csvfile="./lowmetadata.csv"):
+    """
+    Reads every json file in folder to make a csv file from.
+    """
+    import csv
+    if not os.path.isdir(metadatafolder):
+        print("Not a folder")
+        return None
+
+    starting = True
+    list_file = os.listdir(metadatafolder)
+
+    if all(os.path.isdir(os.path.join(metadatafolder, e)) for e in list_file):
+        # if there are only folders inside folder_FITS
+        # create same subfolders for folder_metadata
+        print("Folders detected in " + metadatafolder)
+        list_folder = list_file
+        with open(csvfile, mode='w', newline='') as csvfile:
+            for subfolder_meta in list_folder:
+                list_file = os.listdir(os.path.join(metadatafolder, subfolder_meta))
+                writer = csv.writer(csvfile)
+                for e in list_file:
+                    with open(os.path.join(
+                        metadatafolder, subfolder_meta, e
+                    ), 'r') as file:
+                        data = json.load(file)
+                        print(data)
+                        if starting:
+                            writer.writerows([data.keys()])
+                            starting = False
+                        writer.writerows([data.values()])
+
+    else:
+        with open(csvfile, mode='w', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            for e in list_file:
+                with open(metadatafolder + e , 'r') as file:
+                    data = json.load(file)
+                    if starting:
+                        writer.writerows([data.keys()])
+                        starting = False
+                    writer.writerows([data.values()])
+
+
+
+
+
+
 # Use in terminal python create_amateras_low_metadata.py FOLDER_data folder_metadata
 # can also give a single data file instead of folder_data
 if __name__ == "__main__":
     try:  # Verify folder_FITS is given
         folder_FITS = str(sys.argv[1]).replace("\\", "/")
-
-    except:
-        folder_FITS = "./low/"
+    except IndexError:
+        folder_FITS = "./examples/low/"
         print("FITS Folder not given. Using default: " + folder_FITS)
 
     try:  # Verify folder_metadata is given
         folder_metadata = str(sys.argv[2]).replace("\\", "/")
-    except:
+    except IndexError:
         folder_metadata = "./lowmetadata/"
         print("Metadata Folder not given. Using default: " + folder_metadata)
 
