@@ -4,6 +4,54 @@ import os
 import datetime
 import sys
 import json
+import csv
+from pathlib import Path
+
+
+METADATA_KEYS = [
+    "granule_uid",
+    "granule_gid",
+    "obs_id",
+    "dataproduct_type",
+    "target_name",
+    "target_class",
+    "time_min",
+    "time_max",
+    "time_sampling_step_min",
+    "time_sampling_step_max",
+    "time_exp_min",
+    "time_exp_max",
+    "spectral_range_min",
+    "spectral_range_max",
+    "spectral_sampling_step_min",
+    "spectral_sampling_step_max",
+    "spectral_resolution_min",
+    "spectral_resolution_max",
+    "spatial_frame_type",
+    "instrument_host_name",
+    "instrument_name",
+    "measurement_type",
+    "processing_level",
+    "creation_date",
+    "modification_date",
+    "release_date",
+    "service_title",
+    "access_url",
+    "file_name",
+    "access_format",
+    "access_estsize",
+    "time_scale",
+    # "access_md5",
+    "thumbnail_url",
+    "publisher",
+    "bib_reference",
+    "target_region",
+    "feature_name",
+    # "datalink_url",
+    "receiver_name",
+    "spectral_bandwith_min",
+    "spectral_bandwith_max",
+]  # create a global list of needed kys
 
 
 def delete_empty_folders(root):
@@ -25,247 +73,175 @@ def delete_empty_folders(root):
     return deleted
 
 
-def create_low_metadata(folder_FITS, folder_metadata):
+def create_low_metadata(file_FITS):
     """
     Parameters:
-    folder_FITS: str
-        - Can be either a single fits file or a folder containing fits file
+    file_FITS: str | pathlib.Path
+        - Can be either a single fits file
         -
-    folder_metadata: str
-        - Folder where the metadata files will be saved (must already exist)
     Returns:
-    None
+    dict containing metadata
+    None if error
 
-    This code reads the header in each fits file in folder_FITS and
-    create a metadata json file for each of them
+    This code reads the header of file_FITS and
+    create a metadata dict for it
     """
 
-    if os.path.isdir(folder_FITS):
-        # if folder_FITS is a folder: create a list of files in folder
-        if folder_FITS[-1] != "/":
-            print("Data Folder is missing / at the end: Adding / at the end.")
-            folder_FITS += "/"
-        list_file = os.listdir(folder_FITS)
-    elif os.path.isfile(
-        folder_FITS
-    ):  # if folder_FITS is a file: create a one element list of the given file
-        print("Single file detected")
-        list_file = [None]
-        folder_FITS, list_file[0] = os.path.split(folder_FITS)
-        folder_FITS += "/"
-    else:
-        print("ERROR: Data folder does not exist: " + folder_FITS)
-        exit()
-
-    if len(list_file) == 0:
-        print("ERROR: Data folder is empty" + folder_FITS)
+    file_FITS = Path(file_FITS)
+    filepath = file_FITS.as_posix()
+    if file_FITS.is_file() is False:
+        print("ERROR: File does not exist: " + file_FITS.name)
         return None
 
-    if os.path.isdir(folder_metadata) is False:
-        print("ERROR: Metadata folder does not exist" + folder_metadata)
-        exit()
+    filename = file_FITS.name
+    if file_FITS.suffix == ".fits":
+        header = fits.getheader(file_FITS, 0)  # read FITS header
+    else:
+        print(filepath + " is not a FITS. Skipping this file")
+        return None
+    if any(
+        [
+            e not in header.keys()
+            for e in [
+                "BITPIX",
+                "INSTRUME",
+                "ORIGIN",
+                "TELESCOP",
+                "DATE-OBS",
+                "TIME-OBS",
+                "DATE-END",
+                "TIME-END",
+                "DATE",
+            ]
+        ]
+    ):
+        print("KeyError in " + filepath)
+        return None
 
-    metadata_template = [
-        "granule_uid",
-        "granule_gid",
-        "obs_id",
-        "dataproduct_type",
-        "target_name",
-        "target_class",
-        "time_min",
-        "time_max",
-        "time_sampling_step_min",
-        "time_sampling_step_max",
-        "time_exp_min",
-        "time_exp_max",
-        "spectral_range_min",
-        "spectral_range_max",
-        "spectral_sampling_step_min",
-        "spectral_sampling_step_max",
-        "spectral_resolution_min",
-        "spectral_resolution_max",
-        "spatial_frame_type",
-        "instrument_host_name",
-        "instrument_name",
-        "measurement_type",
-        "processing_level",
-        "creation_date",
-        "modification_date",
-        "release_date",
-        "service_title",
-        "access_url",
-        "file_name",
-        "access_format",
-        "access_estsize",
-        "time_scale",
-        # "access_md5",
-        "thumbnail_url",
-        "publisher",
-        "bib_reference",
-        "target_region",
-        "feature_name",
-        # "datalink_url",
-        "receiver_name",
-        "spectral_bandwith_min",
-        "spectral_bandwith_max",
-    ]  # create list of keys from template file
-
+    if header["BITPIX"] != 8:
+        print(filepath + " is not a 8 bit file")
+        return None
+  
     meta = dict.fromkeys(
-        metadata_template
+        METADATA_KEYS
     )  # create an empty dictionnary with the needed kys
 
-    for filename in list_file:  # iterate all files in folder_FITS
+    meta["spatial_frame_type"] = "none"
 
+    # Instrument metadata from FITS header
+    try:
+        meta["receiver_name"] = header["INSTRUME"]
+        meta["instrument_host_name"] = "Itate Observatory" #header["ORIGIN"]
+        meta["instrument_name"] = header["TELESCOP"]  # INSTRUME?
+        meta["service_title"] = "iprt"
+        meta["publisher"] = "Tohoku University"
+    except KeyError:
+        print(f"Instrument error: check INSTRUME, ORIGIN and TELESCOP field. \
+                Skipping {filepath}")
+        return None
 
+    # Time metadata from FITS header
+    try:
+        t_beg = Time(header["DATE-OBS"] + "T" + header["TIME-OBS"])
+        t_end = Time(header["DATE-END"] + "T" + header["TIME-END"])
 
-        if filename[-4:] == "fits":
-            header = fits.getheader(folder_FITS + filename, 0)  # read FITS header
-        else:
-            print(folder_FITS + filename + " is not a FITS. Skipping this file")
-            continue
-
-        if any(
-            [
-                e not in header.keys()
-                for e in [
-                    "BITPIX",
-                    "INSTRUME",
-                    "ORIGIN",
-                    "TELESCOP",
-                    "DATE-OBS",
-                    "TIME-OBS",
-                    "DATE-END",
-                    "TIME-END",
-                    "DATE",
-                ]
-            ]
-        ):
-            print("KeyError in " + folder_FITS + filename)
-            continue
-
-        if header["BITPIX"] != 8:
-            print(folder_FITS + filename + " is not a 8 bit file")
-            continue
-
-        meta["spatial_frame_type"] = "none"
-
-        # Instrument metadata from FITS header
-        try:
-            meta["receiver_name"] = header["INSTRUME"]
-            meta["instrument_host_name"] = "Itate Observatory" #header["ORIGIN"]
-            meta["instrument_name"] = header["TELESCOP"]  # INSTRUME?
-            meta["service_title"] = "iprt"
-            meta["publisher"] = "Tohoku University"
-        except KeyError:
-            print(f"Instrument error: check INSTRUME, ORIGIN and TELESCOP field. \
-                    Skipping {filename}")
-            continue
-
-        # Time metadata from FITS header
-        try:
-            t_beg = Time(header["DATE-OBS"] + "T" + header["TIME-OBS"])
-            t_end = Time(header["DATE-END"] + "T" + header["TIME-END"])
-
-            meta["time_min"] = t_beg.jd1 + t_beg.jd2
-            meta["time_max"] = t_end.jd1 + t_end.jd2
-            meta["access_url"] = (
-                "http://radio.gp.tohoku.ac.jp/db/IPRT-SUN/DATA2/"
-                + header["DATE-OBS"][:4]
-                + "/"
-                + filename
-            )
-        except KeyError:
-            print(f"DATE error: check DATE-OBS, TIME-OBS, DATE-END and \
-                    TIME-END fields. Skipping {filename}")
-            continue
-        except KeyError:
-            print(f"DATE error: Type error with filename")
-
-        # Time metadata from file metadata
-        try:
-            meta["creation_date"] = datetime.datetime.fromtimestamp(
-                os.path.getctime(folder_FITS + filename)
-            ).isoformat()[
-                :-3
-            ]  # from file date but should be when the granule was introduced in the service
-            meta["modification_date"] = datetime.datetime.fromtimestamp(
-                os.path.getmtime(folder_FITS + filename)
-            ).isoformat()[
-                :-3
-            ]  # from file date but should be when the granule was introduced in the
-            meta["release_date"] = meta["modification_date"]
-            meta["access_estsize"] = os.path.getsize(folder_FITS + filename) / 1e3
-        except:
-            print("Problem with file metadata. Skipping " + filename)
-            continue
-
-        # metadata from file name
-        try:
-            Time(header["DATE"])
-            meta["granule_uid"] = (
-                "iprt_amateras_low_" + header["DATE"].replace("-", "") + "_v1.0"
-            )  #
-            meta["thumbnail_url"] = (
-                "http://radio.gp.tohoku.ac.jp/sun_ql/plot/IPRT_SUN_"
-                + header["DATE"].replace("-", "")
-                + ".gif"
-            )
-        except KeyError:
-            print("Problem with DATE field in header. Skipping " + filename)
-            continue
-        except AttributeError:
-            print("Problem with DATE field in header. Skipping " + filename)
-            continue
-
-        meta["file_name"] = filename  # ??
-        meta["obs_id"] = meta["granule_uid"]  # same as above
-
-        # Constant metadata
-        meta["granule_gid"] = "IPRT AMATERAS Low Resolution Dataset"  # ??
-        meta["dataproduct_type"] = "ds"
-        meta["target_name"] = "Sun"
-        meta["target_class"] = "star"
-        meta["target_region"] = "SolarWind#Heliosphere"
-        meta["feature_name"] = "Solar radio bursts"
-        meta["measurement_type"] = (
-            "phot.flux.density;em.radio;phys.polarization"  # hash separated list ?
+        meta["time_min"] = t_beg.jd1 + t_beg.jd2
+        meta["time_max"] = t_end.jd1 + t_end.jd2
+        meta["access_url"] = (
+            "http://radio.gp.tohoku.ac.jp/db/IPRT-SUN/DATA2/"
+            + header["DATE-OBS"][:4]
+            + "/"
+            + filename
         )
-        meta["processing_level"] = 1  # unit is db above quiet Sun lvl
+    except KeyError:
+        print(f"DATE error: check DATE-OBS, TIME-OBS, DATE-END and \
+                TIME-END fields. Skipping {filepath}")
+        return None
+    except KeyError:
+        print(f"DATE error: Type error with filename")
 
-        ##Time resolution
-        meta["time_sampling_step_min"] = 1  # time between 2 successive measurements
-        meta["time_sampling_step_max"] = 1  # time between 2 successive measurements
+    # Time metadata from file metadata
+    try:
+        meta["creation_date"] = datetime.datetime.fromtimestamp(
+            os.path.getctime(filepath)
+        ).isoformat()[
+            :-3
+        ]  # from file date but should be when the granule was introduced in the service
+        meta["modification_date"] = datetime.datetime.fromtimestamp(
+            os.path.getmtime(filepath)
+        ).isoformat()[
+            :-3
+        ]  # from file date but should be when the granule was introduced in the
+        meta["release_date"] = meta["modification_date"]
+        meta["access_estsize"] = os.path.getsize(filepath) / 1e3
+    except TypeError:
+        raise TypeError("filepath is probably not a str " + filename)
+    except:
+        print("Problem with file metadata. Skipping " + filename)
+        return None
 
-        meta["time_exp_min"] = 1  # integration time
-        meta["time_exp_max"] = 1  # integration time
-
-        meta["time_scale"] = "UTC"
-
-        ## Spetral resolution
-        meta["spectral_range_min"] = int(100e6)
-        meta["spectral_range_max"] = int(500e6)
-        meta["spectral_resolution_min"] = 500.0  # f/df
-        meta["spectral_resolution_max"] = 100.0  # f/df
-
-        meta["spectral_sampling_step_min"] = (
-            0.976562e6  # frequency between 2 successive measurements
+    # metadata from file name
+    try:
+        Time(header["DATE"])
+        meta["granule_uid"] = (
+            "iprt_amateras_low_" + header["DATE"].replace("-", "") + "_v1.0"
+        )  #
+        meta["thumbnail_url"] = (
+            "http://radio.gp.tohoku.ac.jp/sun_ql/plot/IPRT_SUN_"
+            + header["DATE"].replace("-", "")
+            + ".gif"
         )
-        meta["spectral_sampling_step_max"] = (
-            0.976562e6  # frequency between 2 successive measurements
-        )
-        meta["spectral_bandwith_min"] = 0.976562e6  # bandwidth of 1 MHz
-        meta["spectral_bandwith_max"] = 0.976562e6  # bandwidth of 1 MHz
+    except KeyError:
+        print("Problem with DATE field in header. Skipping " + filename)
+        return None
+    except AttributeError:
+        print("Problem with DATE field in header. Skipping " + filename)
+        return None
 
-        ## Access
-        meta["access_format"] = "application/fits"
+    meta["file_name"] = filename  # ??
+    meta["obs_id"] = meta["granule_uid"]  # same as above
 
-        meta["bib_reference"] = "10.1007/s11207-011-9919-y"
+    # Constant metadata
+    meta["granule_gid"] = "IPRT AMATERAS Low Resolution Dataset"  # ??
+    meta["dataproduct_type"] = "ds"
+    meta["target_name"] = "Sun"
+    meta["target_class"] = "star"
+    meta["target_region"] = "SolarWind#Heliosphere"
+    meta["feature_name"] = "Solar radio bursts"
+    meta["measurement_type"] = (
+        "phot.flux.density;em.radio;phys.polarization"  # hash separated list ?
+    )
+    meta["processing_level"] = 1  # unit is db above quiet Sun lvl
 
-        # Create json file in folder_metadata
-        json_name = folder_metadata + filename[:-5] + "_metadata.json"
-        with open(json_name, "w") as json_file:
-            json.dump(meta, json_file, indent=4)
-        print("Metadata successfully saved to " + json_name)
+    ##Time resolution
+    meta["time_sampling_step_min"] = 1  # time between 2 successive measurements
+    meta["time_sampling_step_max"] = 1  # time between 2 successive measurements
+
+    meta["time_exp_min"] = 1  # integration time
+    meta["time_exp_max"] = 1  # integration time
+
+    meta["time_scale"] = "UTC"
+
+    ## Spetral resolution
+    meta["spectral_range_min"] = int(100e6)
+    meta["spectral_range_max"] = int(500e6)
+    meta["spectral_resolution_min"] = 500.0  # f/df
+    meta["spectral_resolution_max"] = 100.0  # f/df
+
+    meta["spectral_sampling_step_min"] = (
+        0.976562e6  # frequency between 2 successive measurements
+    )
+    meta["spectral_sampling_step_max"] = (
+        0.976562e6  # frequency between 2 successive measurements
+    )
+    meta["spectral_bandwith_min"] = 0.976562e6  # bandwidth of 1 MHz
+    meta["spectral_bandwith_max"] = 0.976562e6  # bandwidth of 1 MHz
+
+    # Access
+    meta["access_format"] = "application/fits"
+
+    meta["bib_reference"] = "10.1007/s11207-011-9919-y"
+    return meta
 
 
 def fromjsontocsv(metadatafolder="./lowmetadata/", csvfile="./lowmetadata.csv"):
@@ -312,24 +288,25 @@ def fromjsontocsv(metadatafolder="./lowmetadata/", csvfile="./lowmetadata.csv"):
                     writer.writerows([data.values()])
 
 
-
-
-
-
-# Use in terminal python create_amateras_low_metadata.py FOLDER_data folder_metadata
-# can also give a single data file instead of folder_data
-if __name__ == "__main__":
+def verify_input_paths(paths):
+    """ Verify the inputs if any 
+    Returns pathlib of the folders"""
     try:  # Verify folder_FITS is given
-        folder_FITS = str(sys.argv[1]).replace("\\", "/")
+        folder_FITS = str(paths[1]).replace("\\", "/")
     except IndexError:
         folder_FITS = "./examples/low/"
         print("FITS Folder not given. Using default: " + folder_FITS)
 
     try:  # Verify folder_metadata is given
-        folder_metadata = str(sys.argv[2]).replace("\\", "/")
+        folder_metadata = str(paths[2]).replace("\\", "/")
     except IndexError:
         folder_metadata = "./lowmetadata/"
         print("Metadata Folder not given. Using default: " + folder_metadata)
+
+    if len(paths)>5:
+        create_csv, create_json = bool(paths[3]),  bool(paths[4])
+    else:
+        create_csv, create_json = True, True
 
     if folder_metadata[-1] != "/":
         folder_metadata += "/"
@@ -347,22 +324,78 @@ if __name__ == "__main__":
         if len(L_folder) == 0:
             print(folder_FITS + " is empty")
             exit()
+    # Create metadata folder if doesnt exist
+    Path(folder_metadata).mkdir(parents=True, exist_ok=True)
 
-        if all(os.path.isdir(os.path.join(folder_FITS, e)) for e in L_folder):
-            # if there are only folders inside folder_FITS
-            # create same subfolders for folder_metadata
-            print("Folders detected in " + folder_FITS)
-            for subfolder_FITS in L_folder:
-                if not os.path.isdir(folder_metadata + subfolder_FITS):
-                    # if subfolder_FITS not in folder_metadata then create it.
-                    os.makedirs(folder_metadata + subfolder_FITS)
+    return Path(folder_metadata), Path(folder_FITS), create_csv, create_json
 
-                create_low_metadata(
-                    folder_FITS + subfolder_FITS + "/",
-                    folder_metadata + subfolder_FITS + "/",
-                )
+
+def browse_save(
+    folder_FITS_path,
+    folder_metadata_path,
+    csv_filename,
+    metadata_creator,
+    create_csv=True,
+    create_json=True
+):
+    with open(csv_filename, mode='w', newline='') as csvfile:
+        # Initialize csv file
+        if create_csv:
+            writer = csv.writer(csvfile)
+            writer.writerows([METADATA_KEYS])
+
+        # Browse folder_FITS
+        if folder_FITS_path.is_file:
+            iterator = [folder_FITS_path]
         else:
-            create_low_metadata(folder_FITS, folder_metadata)
+            iterator = folder_FITS_path.rglob("*")
+
+        for e in iterator:
+
+            # if element is folder create equivalent folder in metadata folder
+            if e.is_dir() and create_json:
+                target = folder_metadata_path / e.relative_to(folder_FITS_path)
+                target.mkdir(parents=True, exist_ok=True)
+
+            # If element is fits create a python dict containing metadata
+            elif e.name.endswith('.fits'):  # if fits
+                dict_metadata = metadata_creator(e)
+                if dict_metadata is not None:
+                    # Create json file in folder_metadata
+                    if create_json:
+                        json_name = folder_metadata_path / (
+                            e.parent.relative_to(folder_FITS_path) / (
+                                e.name[:-5] + "_metadata.json"
+                            )
+                        )
+                        with open(json_name, "w") as json_file:
+                            json.dump(dict_metadata, json_file, indent=4)
+                        print("Metadata successfully saved to " + json_name.name)
+                    # Add row in csv file
+                    if create_csv:
+                        writer.writerows([dict_metadata.values()])
+
+    if not create_csv:
+        os.rm(csv_filename)
+    if create_json:
+        delete_empty_folders(folder_metadata_path.as_posix())
+
+
+# Use in terminal python create_amateras_low_metadata.py FOLDER_data folder_metadata
+# can also give a single data file instead of folder_data
+if __name__ == "__main__":
+    (folder_FITS_path, folder_metadata_path,
+        create_json, create_csv) = verify_input_paths(sys.argv)
+
+    if create_csv is False and create_json is False:
+        print('Select one of the output return')
+        exit()
+
+    if create_csv:
+        csv_filename = folder_metadata_path / "IPRT_low_metadata_table.csv"
     else:
-        create_low_metadata(folder_FITS, folder_metadata)
-    delete_empty_folders(folder_metadata)
+        csv_filename = folder_metadata_path / "empty"
+
+    browse_save(folder_FITS_path, folder_metadata_path,
+                csv_filename, create_low_metadata, create_json, create_csv)
+    print("Finished")
