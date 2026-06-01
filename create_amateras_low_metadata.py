@@ -7,7 +7,6 @@ import json
 import csv
 from pathlib import Path
 
-
 METADATA_KEYS = [
     "granule_uid",
     "granule_gid",
@@ -121,7 +120,7 @@ def create_low_metadata(file_FITS):
     if header["BITPIX"] != 8:
         print(filepath + " is not a 8 bit file")
         return None
-  
+
     meta = dict.fromkeys(
         METADATA_KEYS
     )  # create an empty dictionnary with the needed kys
@@ -131,7 +130,7 @@ def create_low_metadata(file_FITS):
     # Instrument metadata from FITS header
     try:
         meta["receiver_name"] = header["INSTRUME"]
-        meta["instrument_host_name"] = "Itate Observatory" #header["ORIGIN"]
+        meta["instrument_host_name"] = "Itate Observatory"  # header["ORIGIN"]
         meta["instrument_name"] = header["TELESCOP"]  # INSTRUME?
         meta["service_title"] = "iprt"
         meta["publisher"] = "Tohoku University"
@@ -157,8 +156,8 @@ def create_low_metadata(file_FITS):
         print(f"DATE error: check DATE-OBS, TIME-OBS, DATE-END and \
                 TIME-END fields. Skipping {filepath}")
         return None
-    except KeyError:
-        print(f"DATE error: Type error with filename")
+    except TypeError:
+        print(f"DATE error: Type error with {filename}")
 
     # Time metadata from file metadata
     try:
@@ -176,6 +175,7 @@ def create_low_metadata(file_FITS):
         meta["access_estsize"] = os.path.getsize(filepath) / 1e3
     except TypeError:
         raise TypeError("filepath is probably not a str " + filename)
+        return None
     except:
         print("Problem with file metadata. Skipping " + filename)
         return None
@@ -213,7 +213,7 @@ def create_low_metadata(file_FITS):
     )
     meta["processing_level"] = 1  # unit is db above quiet Sun lvl
 
-    ##Time resolution
+    #Time resolution
     meta["time_sampling_step_min"] = 1  # time between 2 successive measurements
     meta["time_sampling_step_max"] = 1  # time between 2 successive measurements
 
@@ -222,7 +222,7 @@ def create_low_metadata(file_FITS):
 
     meta["time_scale"] = "UTC"
 
-    ## Spetral resolution
+    # Spetral resolution
     meta["spectral_range_min"] = int(100e6)
     meta["spectral_range_max"] = int(500e6)
     meta["spectral_resolution_min"] = 500.0  # f/df
@@ -288,23 +288,34 @@ def fromjsontocsv(metadatafolder="./lowmetadata/", csvfile="./lowmetadata.csv"):
                     writer.writerows([data.values()])
 
 
-def verify_input_paths(paths):
-    """ Verify the inputs if any 
+def verify_input_paths(paths, defaults='low'):
+
+    if defaults == 'low':
+        default_folder_fits = "./examples/low/"
+        default_folder_metadata = "./lowmetadata/"
+    elif defaults == 'high16':
+        default_folder_fits = "./examples/high16/"
+        default_folder_metadata = "./high16metadata/"
+    elif defaults == 'high08':
+        default_folder_fits = "./examples/high8/"
+        default_folder_metadata = "./high16metadata/"
+
+    """ Verify the inputs if any
     Returns pathlib of the folders"""
     try:  # Verify folder_FITS is given
         folder_FITS = str(paths[1]).replace("\\", "/")
     except IndexError:
-        folder_FITS = "./examples/low/"
+        folder_FITS = default_folder_fits  # "./examples/low/"
         print("FITS Folder not given. Using default: " + folder_FITS)
 
     try:  # Verify folder_metadata is given
         folder_metadata = str(paths[2]).replace("\\", "/")
     except IndexError:
-        folder_metadata = "./lowmetadata/"
+        folder_metadata = default_folder_metadata  # "./lowmetadata/"
         print("Metadata Folder not given. Using default: " + folder_metadata)
 
-    if len(paths)>5:
-        create_csv, create_json = bool(paths[3]),  bool(paths[4])
+    if len(paths) > 5:
+        create_csv, create_json = bool(paths[3]), bool(paths[4])
     else:
         create_csv, create_json = True, True
 
