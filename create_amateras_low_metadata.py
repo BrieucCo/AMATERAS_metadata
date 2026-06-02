@@ -5,10 +5,11 @@ import datetime
 import sys
 import json
 import csv
-import warnings
-import logging
-
 from pathlib import Path
+from alive_progress import alive_it
+# import logging
+# import warnings
+
 METADATA_KEYS = [
     "granule_uid",
     "granule_gid",
@@ -96,13 +97,14 @@ def create_low_metadata(file_FITS):
 
     filename = file_FITS.name
     if file_FITS.suffix == ".fits":
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")  # force all warnings in bloc to be seen even if previously seen
-            header = fits.getheader(file_FITS, 0)  # read FITS header
-            for warning in w:
-                logger.warning(
-                    "%s: %s", filename, str(warning.message)
-                )
+        header = fits.getheader(file_FITS, 0)  # read FITS header
+        # with warnings.catch_warnings(record=True) as w:
+        #     warnings.simplefilter("always")  # force all warnings in bloc to be seen even if previously seen
+        #     header = fits.getheader(file_FITS, 0)  # read FITS header
+        #     for warning in w:
+        #         logger.warning(
+        #             "%s: %s", filename, str(warning.message)
+        #         )
 
     else:
         print(filepath + " is not a FITS. Skipping this file")
@@ -370,9 +372,9 @@ def browse_save(
             print(f'only one file detected: {str(folder_FITS_path)}')
             iterator = [folder_FITS_path]
         else:
-            iterator = folder_FITS_path.rglob("*")
+            iterator = list(folder_FITS_path.rglob("*"))
 
-        for e in iterator:
+        for e in alive_it(iterator):
             # if element is folder create equivalent folder in metadata folder
             if any(err in e.as_posix() for err in ["old", "misc", "Original", "Revised", "misc"]):
                 continue
@@ -393,7 +395,7 @@ def browse_save(
                         )
                         with open(json_name, "w") as json_file:
                             json.dump(dict_metadata, json_file, indent=4)
-                        print("Metadata successfully saved to " + json_name.name)
+                        # print("Metadata successfully saved to " + json_name.name)
                     # Add row in csv file
                     if create_csv:
                         writer.writerows([dict_metadata.values()])
@@ -405,13 +407,13 @@ def browse_save(
 
 
 # Config log file
-logging.basicConfig(
-    filename="fits_warnings.log",
-    level=logging.WARNING,
-    format="%(asctime)s %(levelname)s %(message)s"
-)
+# logging.basicConfig(
+#     filename="fits_warnings.log",
+#     level=logging.WARNING,
+#     format="%(asctime)s %(levelname)s %(message)s"
+# )
 
-logger = logging.getLogger(__name__)
+# logger = logging.getLogger(__name__)
 
 
 # Use in terminal python create_amateras_low_metadata.py FOLDER_data folder_metadata
