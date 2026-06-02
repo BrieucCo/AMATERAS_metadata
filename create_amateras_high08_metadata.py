@@ -4,7 +4,7 @@ import os
 import datetime
 import sys
 from create_amateras_low_metadata import verify_input_paths, browse_save
-
+from pathlib import Path
 
 METADATA_KEYS_HIGH = [
     "granule_uid",
@@ -185,9 +185,11 @@ def create_high08_metadata(file_FITS):
 
     # metadata from file name
     try:
-        Time(header["DATE"])
         meta["granule_uid"] = (
-            "iprt_amateras_high_8bit" + header["DATE"].replace("-", "") + "_v1.0"
+            "iprt_amateras_high_08bit{}-{}_v1.0".format(
+                header["DATE"].replace("-", ""),
+                header["TIME-OBS"][:5].replace(":", "")
+            )
         )  #
         meta["thumbnail_url"] = (
             "http://octave.gp.tohoku.ac.jp/db/IPRT-SUN/l1/png/high08/{}/{}/{}.png".format(
@@ -219,7 +221,7 @@ def create_high08_metadata(file_FITS):
     )
     meta["processing_level"] = 1  # unit is db above quiet Sun lvl
 
-    ##Time resolution
+    # Time resolution
     meta["time_sampling_step_min"] = 1  # time between 2 successive measurements
     meta["time_sampling_step_max"] = 1  # time between 2 successive measurements
 
@@ -228,7 +230,7 @@ def create_high08_metadata(file_FITS):
 
     meta["time_scale"] = "UTC"
 
-    ## Spetral resolution
+    # Spetral resolution
     meta["spectral_range_min"] = int(100e6)
     meta["spectral_range_max"] = int(500e6)
     meta["spectral_resolution_min"] = 1631e3  # f/df
