@@ -5,8 +5,10 @@ import datetime
 import sys
 import json
 import csv
-from pathlib import Path
+import warnings
+import logging
 
+from pathlib import Path
 METADATA_KEYS = [
     "granule_uid",
     "granule_gid",
@@ -94,7 +96,14 @@ def create_low_metadata(file_FITS):
 
     filename = file_FITS.name
     if file_FITS.suffix == ".fits":
-        header = fits.getheader(file_FITS, 0)  # read FITS header
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")  # force all warnings in bloc to be seen even if previously seen
+            header = fits.getheader(file_FITS, 0)  # read FITS header
+            for warning in w:
+                logger.warning(
+                    "%s: %s", filename, str(warning.message)
+                )
+
     else:
         print(filepath + " is not a FITS. Skipping this file")
         return None
@@ -297,11 +306,12 @@ def verify_input_paths(paths, defaults='low'):
         default_folder_fits = "./examples/high16/"
         default_folder_metadata = "./high16metadata/"
     elif defaults == 'high08':
-        default_folder_fits = "./examples/high8/"
-        default_folder_metadata = "./high16metadata/"
+        default_folder_fits = "./examples/high08/"
+        default_folder_metadata = "./high08metadata/"
 
     """ Verify the inputs if any
     Returns pathlib of the folders"""
+    
     try:  # Verify folder_FITS is given
         folder_FITS = str(paths[1]).replace("\\", "/")
     except IndexError:
@@ -314,8 +324,8 @@ def verify_input_paths(paths, defaults='low'):
         folder_metadata = default_folder_metadata  # "./lowmetadata/"
         print("Metadata Folder not given. Using default: " + folder_metadata)
 
-    if len(paths) > 5:
-        create_csv, create_json = bool(paths[3]), bool(paths[4])
+    if len(paths) >= 5:
+        create_csv, create_json = bool(int(paths[3])), bool(int(paths[4]))
     else:
         create_csv, create_json = True, True
 
@@ -338,7 +348,7 @@ def verify_input_paths(paths, defaults='low'):
     # Create metadata folder if doesnt exist
     Path(folder_metadata).mkdir(parents=True, exist_ok=True)
 
-    return Path(folder_metadata), Path(folder_FITS), create_csv, create_json
+    return Path(folder_FITS), Path(folder_metadata), create_csv, create_json
 
 
 def browse_save(
@@ -356,14 +366,16 @@ def browse_save(
             writer.writerows([METADATA_KEYS])
 
         # Browse folder_FITS
-        if folder_FITS_path.is_file:
+        if folder_FITS_path.is_file and not folder_FITS_path.is_dir:
+            print(f'only one file detected: {str(folder_FITS_path)}')
             iterator = [folder_FITS_path]
         else:
             iterator = folder_FITS_path.rglob("*")
 
         for e in iterator:
-
             # if element is folder create equivalent folder in metadata folder
+            if any(err in e.as_posix() for err in ["old", "misc", "Original", "Revised", "misc"]):
+                continue
             if e.is_dir() and create_json:
                 target = folder_metadata_path / e.relative_to(folder_FITS_path)
                 target.mkdir(parents=True, exist_ok=True)
@@ -390,6 +402,16 @@ def browse_save(
         os.rm(csv_filename)
     if create_json:
         delete_empty_folders(folder_metadata_path.as_posix())
+
+
+# Config log file
+logging.basicConfig(
+    filename="fits_warnings.log",
+    level=logging.WARNING,
+    format="%(asctime)s %(levelname)s %(message)s"
+)
+
+logger = logging.getLogger(__name__)
 
 
 # Use in terminal python create_amateras_low_metadata.py FOLDER_data folder_metadata
