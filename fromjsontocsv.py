@@ -24,8 +24,7 @@ def fromjsontocsv(metadatafolder="./lowmetadata/", csvfile="./lowmetadata.csv"):
     with open(csvfile, mode='w', newline='') as csvfile:
         writer = csv.writer(csvfile)
         for e in list_folder:
-            print(e)
-            if e.suffix == "json":
+            if e.suffix == ".json":
                 print(e)
                 with open(e.as_posix(), 'r') as file:
                     data = json.load(file)
