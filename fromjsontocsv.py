@@ -37,4 +37,4 @@ def fromjsontocsv(metadatafolder="./lowmetadata/", csvpath="./lowmetadata.csv"):
 
 if __name__ == "__main__":
     argv
-    fromjsontocsv(metadatafolder=argv[1], csvfile=argv[2])
+    fromjsontocsv(metadatafolder=argv[1], csvpath=argv[2])
