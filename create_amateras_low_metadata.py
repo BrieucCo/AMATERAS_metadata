@@ -255,50 +255,6 @@ def create_low_metadata(file_FITS):
     return meta
 
 
-def fromjsontocsv(metadatafolder="./lowmetadata/", csvfile="./lowmetadata.csv"):
-    """
-    Reads every json file in folder to make a csv file from.
-    """
-    import csv
-    if not os.path.isdir(metadatafolder):
-        print("Not a folder")
-        return None
-
-    starting = True
-    list_file = os.listdir(metadatafolder)
-
-    if all(os.path.isdir(os.path.join(metadatafolder, e)) for e in list_file):
-        # if there are only folders inside folder_FITS
-        # create same subfolders for folder_metadata
-        print("Folders detected in " + metadatafolder)
-        list_folder = list_file
-        with open(csvfile, mode='w', newline='') as csvfile:
-            for subfolder_meta in list_folder:
-                list_file = os.listdir(os.path.join(metadatafolder, subfolder_meta))
-                writer = csv.writer(csvfile)
-                for e in list_file:
-                    with open(os.path.join(
-                        metadatafolder, subfolder_meta, e
-                    ), 'r') as file:
-                        data = json.load(file)
-                        print(data)
-                        if starting:
-                            writer.writerows([data.keys()])
-                            starting = False
-                        writer.writerows([data.values()])
-
-    else:
-        with open(csvfile, mode='w', newline='') as csvfile:
-            writer = csv.writer(csvfile)
-            for e in list_file:
-                with open(metadatafolder + e , 'r') as file:
-                    data = json.load(file)
-                    if starting:
-                        writer.writerows([data.keys()])
-                        starting = False
-                    writer.writerows([data.values()])
-
-
 def verify_input_paths(paths, defaults='low'):
 
     if defaults == 'low':
@@ -420,7 +376,7 @@ def browse_save(
 # can also give a single data file instead of folder_data
 if __name__ == "__main__":
     (folder_FITS_path, folder_metadata_path,
-        create_json, create_csv) = verify_input_paths(sys.argv)
+        create_csv, create_json) = verify_input_paths(sys.argv)
 
     if create_csv is False and create_json is False:
         print('Select one of the output return')
