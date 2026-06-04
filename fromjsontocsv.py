@@ -6,7 +6,7 @@ from pathlib import Path
 from sys import argv
 
 
-def fromjsontocsv(metadatafolder="./lowmetadata/", csvfile="./lowmetadata.csv"):
+def fromjsontocsv(metadatafolder="./lowmetadata/", csvpath="./lowmetadata.csv"):
     """
     Reads every json file in folder to make a csv file from.
     """
@@ -14,14 +14,14 @@ def fromjsontocsv(metadatafolder="./lowmetadata/", csvfile="./lowmetadata.csv"):
         print("Not a folder")
         return None
 
-    metadatafolder, csvfile = Path(metadatafolder), Path(csvfile)
+    metadatafolder, csvfile = Path(metadatafolder), Path(csvpath)
 
     starting = True
     print('Opening ' + metadatafolder.as_posix())
     print('Opening ' + metadatafolder.as_posix())
     list_folder = list(metadatafolder.rglob("*"))
     print(str(len(list_folder)) + "elements")
-    with open(csvfile, mode='w', newline='') as csvfile:
+    with open(csvpath.as_posix(), mode='w', newline='') as csvfile:
         writer = csv.writer(csvfile)
         for e in list_folder:
             if e.suffix == ".json":
