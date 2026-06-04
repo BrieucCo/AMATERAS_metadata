@@ -27,7 +27,6 @@ def fromjsontocsv(metadatafolder="./lowmetadata/", csvpath="./lowmetadata.csv"):
             if e.suffix == ".json":
                 with open(e.as_posix(), 'r') as file:
                     data = json.load(file)
-                    print(data)
                     if starting:
                         writer.writerows([data.keys()])
                         starting = False
