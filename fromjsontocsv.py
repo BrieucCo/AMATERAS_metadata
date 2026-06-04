@@ -18,6 +18,7 @@ def fromjsontocsv(metadatafolder="./lowmetadata/", csvfile="./lowmetadata.csv"):
 
     starting = True
     print('Opening ' + metadatafolder.as_posix())
+    print('Opening ' + metadatafolder.as_posix())
     list_folder = list(metadatafolder.rglob("*"))
     print(str(len(list_folder)) + "elements")
     with open(csvfile, mode='w', newline='') as csvfile:
