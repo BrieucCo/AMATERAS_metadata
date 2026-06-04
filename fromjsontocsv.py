@@ -14,7 +14,7 @@ def fromjsontocsv(metadatafolder="./lowmetadata/", csvpath="./lowmetadata.csv"):
         print("Not a folder")
         return None
 
-    metadatafolder, csvfile = Path(metadatafolder), Path(csvpath)
+    metadatafolder, csvpath = Path(metadatafolder), Path(csvpath)
 
     starting = True
     print('Opening ' + metadatafolder.as_posix())
