@@ -263,9 +263,8 @@ if __name__ == "__main__":
     if create_csv:
         csv_filename = folder_metadata_path / "IPRT_high16_metadata_table.csv"
     else:
-        print("create csv False")
         csv_filename = folder_metadata_path / "empty"
 
     browse_save(folder_FITS_path, folder_metadata_path,
-                csv_filename, create_high16_metadata, create_json, create_csv)
+                csv_filename, create_high16_metadata, create_csv, create_json)
     print("Finished")

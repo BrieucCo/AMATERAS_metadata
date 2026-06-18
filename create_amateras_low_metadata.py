@@ -388,5 +388,5 @@ if __name__ == "__main__":
         csv_filename = folder_metadata_path / "empty"
 
     browse_save(folder_FITS_path, folder_metadata_path,
-                csv_filename, create_low_metadata, create_json, create_csv)
+                csv_filename, create_low_metadata, create_csv, create_json)
     print("Finished")
