@@ -186,10 +186,8 @@ def create_high16_metadata(file_FITS):
     # metadata from file name
     try:
         meta["granule_uid"] = (
-            "iprt_amateras_high_16bit{}".format(
-                filename[-22:-5]
-            )
-        )  #
+            "iprt_amateras_high_16bit{}_v1.0".format(filename[-22:-9])
+        )
         meta["thumbnail_url"] = (
             "http://octave.gp.tohoku.ac.jp/db/IPRT-SUN/l1/png/high16/{}/{}/{}.png".format(
                 header["DATE"][:4],
