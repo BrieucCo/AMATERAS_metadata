@@ -329,7 +329,7 @@ def browse_save(
             iterator = [folder_FITS_path]
         else:
             iterator = list(folder_FITS_path.rglob("*"))
-
+        print('Starting: '+ str(len(iterator)))
         for e in alive_it(iterator):
             # if element is folder create equivalent folder in metadata folder
             if any(err in e.as_posix() for err in ["old", "misc", "Original", "Revised", "misc"]):
