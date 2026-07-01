@@ -322,14 +322,14 @@ def browse_save(
         if create_csv:
             writer = csv.writer(csvfile)
             writer.writerows([METADATA_KEYS])
-
+        print('Browse folder...')
         # Browse folder_FITS
         if folder_FITS_path.is_file and not folder_FITS_path.is_dir:
             print(f'only one file detected: {str(folder_FITS_path)}')
             iterator = [folder_FITS_path]
         else:
             iterator = list(folder_FITS_path.rglob("*"))
-        print('Starting: '+ str(len(iterator)))
+        print('Found {} files.'.format(str(len(iterator))))
         for e in alive_it(iterator):
             # if element is folder create equivalent folder in metadata folder
             if any(err in e.as_posix() for err in ["old", "misc", "Original", "Revised", "misc"]):
