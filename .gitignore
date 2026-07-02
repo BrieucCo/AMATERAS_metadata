@@ -11,3 +11,4 @@ lowmetadata/2015/20150103_IPRT_metadata_old.json
 lowmetadatatest/
 *.csv
 __pycache__/
+.~lock.*

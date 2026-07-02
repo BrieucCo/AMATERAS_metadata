@@ -128,6 +128,8 @@ def create_high16_metadata(file_FITS):
 
     meta["spatial_frame_type"] = "none"
 
+    ver_num = int(file_FITS.stem[-2:])
+
     # Instrument metadata from FITS header
     try:
         meta["receiver_name"] = header["INSTRUME"]
@@ -186,15 +188,18 @@ def create_high16_metadata(file_FITS):
     # metadata from file name
     try:
         meta["granule_uid"] = (
-            "iprt_amateras_high_16bit{}_v1.0".format(filename[-22:-9])
+            "iprt_amateras_high_16bit{0}_v{1:1.1f}".format(filename[-22:-9],ver_num)
         )
-        meta["thumbnail_url"] = (
-            "http://octave.gp.tohoku.ac.jp/db/IPRT-SUN/l1/png/high16/{}/{}/{}.png".format(
-                header["DATE"][:4],
-                header["DATE"].replace("-", ""),
-                filename[:-5],
+        if ver_num != 2:
+            meta["thumbnail_url"] = (
+                "http://octave.gp.tohoku.ac.jp/db/IPRT-SUN/l1/png/high16/{}/{}/{}.png".format(
+                    header["DATE"][:4],
+                    header["DATE"].replace("-", ""),
+                    filename[:-5],
+                )
             )
-        )
+        else:
+            meta["thumbnail_url"] = "none"
 
     except KeyError:
         print("Problem with DATE field in header. Skipping " + filename)
