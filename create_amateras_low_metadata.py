@@ -6,9 +6,14 @@ import sys
 import json
 import csv
 from pathlib import Path
-from alive_progress import alive_it
 # import logging
 # import warnings
+
+try:
+    from alive_progress import alive_it
+except ImportError:
+    # pip install alive-progress
+    alive_it = lambda x: x
 
 METADATA_KEYS = [
     "granule_uid",
@@ -287,6 +292,11 @@ def verify_input_paths(paths, defaults='low'):
     else:
         create_csv, create_json = True, True
 
+    if len(paths) >= 6:
+        update = bool(int(paths[5]))
+    else:
+        update = False
+
     if folder_metadata[-1] != "/":
         folder_metadata += "/"
         print("Metadata Folder is missing / at the end: Adding / at the end.")
@@ -306,7 +316,7 @@ def verify_input_paths(paths, defaults='low'):
     # Create metadata folder if doesnt exist
     Path(folder_metadata).mkdir(parents=True, exist_ok=True)
 
-    return Path(folder_FITS), Path(folder_metadata), create_csv, create_json
+    return Path(folder_FITS), Path(folder_metadata), create_csv, create_json, update
 
 
 def browse_save(
@@ -315,12 +325,26 @@ def browse_save(
     csv_filename,
     metadata_creator,
     create_csv=True,
-    create_json=True
+    create_json=True,
+    update=False
 ):
-    with open(csv_filename, mode='w', newline='') as csvfile:
+    if not create_csv and update:
+        raise Exception("Update is not possible with create_csv = False")
+    if update:
+        mode = "r+"
+    else:
+        mode = "w"
+    with open(csv_filename, mode=mode, newline='') as csvfile:
+        if update:
+            filenames_csv = []
+            for row in csv.DictReader(csvfile):
+                filenames_csv.append(row['file_name'])
+
+
         # Initialize csv file
         if create_csv:
             writer = csv.writer(csvfile)
+        if not update:
             writer.writerows([METADATA_KEYS])
         print('Browse folder...')
         # Browse folder_FITS
@@ -339,9 +363,14 @@ def browse_save(
                 target.mkdir(parents=True, exist_ok=True)
 
             # If element is fits create a python dict containing metadata
+
             elif e.name.endswith('.fits'):  # if fits
+                if update:
+                    if e.name in filenames_csv:
+                        continue
+                print(e.name)
                 dict_metadata = metadata_creator(e)
-                if dict_metadata is not None:
+                if dict_metadata:  # is not None:
                     # Create json file in folder_metadata
                     if create_json:
                         json_name = folder_metadata_path / (
@@ -372,11 +401,12 @@ def browse_save(
 # logger = logging.getLogger(__name__)
 
 
-# Use in terminal python create_amateras_low_metadata.py FOLDER_data folder_metadata
+# Use in terminal python create_amateras_low_metadata.py FOLDER_data folder_metadata 1 0 0 to create only csv
+# the 3 numbers correspond to booleans controlling the creation of csv file, json files per data file, or only update only file not in csv
 # can also give a single data file instead of folder_data
 if __name__ == "__main__":
     (folder_FITS_path, folder_metadata_path,
-        create_csv, create_json) = verify_input_paths(sys.argv)
+        create_csv, create_json, update) = verify_input_paths(sys.argv)
 
     if create_csv is False and create_json is False:
         print('Select one of the output return')
@@ -386,7 +416,6 @@ if __name__ == "__main__":
         csv_filename = folder_metadata_path / "IPRT_low_metadata_table.csv"
     else:
         csv_filename = folder_metadata_path / "empty"
-
     browse_save(folder_FITS_path, folder_metadata_path,
-                csv_filename, create_low_metadata, create_csv, create_json)
+                csv_filename, create_low_metadata, create_csv, create_json, update)
     print("Finished")
