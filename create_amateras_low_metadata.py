@@ -307,7 +307,7 @@ def verify_input_paths(paths, defaults='low'):
     if len(paths) >= 5:
         create_csv, create_json = bool(int(paths[3])), bool(int(paths[4]))
     else:
-        create_csv, create_json = True, True
+        create_csv, create_json = True, False
 
     if len(paths) >= 6:
         update = bool(int(paths[5]))
@@ -419,6 +419,7 @@ def browse_save(
 
 # Use in terminal python create_amateras_low_metadata.py FOLDER_data folder_metadata 1 0 0 to create only csv
 # the 3 numbers correspond to booleans controlling the creation of csv file, json files per data file, or only update only file not in csv
+# If you do create_amateras_low_metadata without any parameters, the folders are correctly assumed for the database (01 Sept 2026) will update the csv file and no json files will be created 
 # can also give a single data file instead of folder_data
 if __name__ == "__main__":
     (folder_FITS_path, folder_metadata_path,
