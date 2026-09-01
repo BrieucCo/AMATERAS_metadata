@@ -293,12 +293,16 @@ def verify_input_paths(paths, defaults='low'):
     Returns pathlib of the folders"""
     
     try:  # Verify folder_FITS is given
+        if paths[2] == " ":
+            raise IndexError
         folder_FITS = str(paths[1]).replace("\\", "/")
     except IndexError:
         folder_FITS = default_folder_fits  # "./examples/low/"
         print("FITS Folder not given. Using default: " + folder_FITS)
 
     try:  # Verify folder_metadata is given
+        if paths[2] == " ":
+            raise IndexError
         folder_metadata = str(paths[2]).replace("\\", "/")
     except IndexError:
         folder_metadata = default_folder_metadata  # "./lowmetadata/"
