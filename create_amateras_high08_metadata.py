@@ -260,7 +260,7 @@ def create_high08_metadata(file_FITS):
 # can also give a single data file instead of folder_data
 if __name__ == "__main__":
     (folder_FITS_path, folder_metadata_path,
-        create_csv, create_json) = verify_input_paths(sys.argv, defaults='high08')
+        create_csv, create_json, update) = verify_input_paths(sys.argv, defaults='high08')
 
     if create_csv is False and create_json is False:
         print('Select one of the output return')
@@ -272,5 +272,5 @@ if __name__ == "__main__":
         csv_filename = folder_metadata_path / "empty"
 
     browse_save(folder_FITS_path, folder_metadata_path,
-                csv_filename, create_high08_metadata, create_csv, create_json)
+                csv_filename, create_high08_metadata, create_csv, create_json, update)
     print("Finished")
