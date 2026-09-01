@@ -16,9 +16,12 @@ except ImportError:
     # pip install alive-progress
     alive_it = lambda x: x
     from contextlib import contextmanager
+
     @contextmanager
     def alive_bar(*args, **kwargs):
         yield lambda *a, **k: None
+
+EXCEPT_FOLDER = ["old", "misc", "Original", "Revised", "misc"]  # folder to be ignored
 
 METADATA_KEYS = [
     "granule_uid",
@@ -234,7 +237,7 @@ def create_low_metadata(file_FITS):
     )
     meta["processing_level"] = 1  # unit is db above quiet Sun lvl
 
-    #Time resolution
+    # Time resolution
     meta["time_sampling_step_min"] = 1  # time between 2 successive measurements
     meta["time_sampling_step_max"] = 1  # time between 2 successive measurements
 
@@ -292,11 +295,9 @@ def verify_input_paths(paths, defaults='low'):
         default_folder_fits = "."
         default_folder_metadata = "./metadata/"
 
-
-
     """ Verify the inputs if any
     Returns pathlib of the folders"""
-    
+
     try:  # Verify folder_FITS is given
         folder_FITS = str(paths[1]).replace("\\", "/")
     except IndexError:
@@ -349,7 +350,7 @@ def browse_save(
     create_csv=True,
     create_json=True,
     update=False,
-    multiprocess = True
+    multiprocess=True
 ):
     if not create_csv and update:
         raise Exception("Update is not possible with create_csv = False")
@@ -359,10 +360,7 @@ def browse_save(
         mode = "w"
     with open(csv_filename, mode=mode, newline='') as csvfile:
         if update:
-            filenames_csv = []
-            for row in csv.DictReader(csvfile):
-                filenames_csv.append(row['file_name'])
-
+            filenames_csv = {row['file_name'] for row in csv.DictReader(csvfile)}
 
         # Initialize csv file
         if create_csv:
@@ -371,33 +369,37 @@ def browse_save(
             writer.writerows([METADATA_KEYS])
         print('Browse folder...')
         # Browse folder_FITS
-        if folder_FITS_path.is_file and not folder_FITS_path.is_dir:
-            print(f'only one file detected: {str(folder_FITS_path)}')
-            iterator = [folder_FITS_path]
-        else:
-            iterator = list(folder_FITS_path.rglob("*"))
-        print('Found {} files.'.format(str(len(iterator))))
-        
+
         if multiprocess:
             if create_json:
                 raise NotImplementedError(
                     "creat_json and multiprocess are currently incompatible"
                 )
-            with ProcessPoolExecutor() as executor:
-                iterator = [
-                    file
-                    for file in iterator
-                    if ((file.name.endswith('.fits')) and all(
-                        err not in file.as_posix() for err in ["old", "misc", "Original", "Revised", "misc"]
-                    ))
-                ]
-                if update:
-                    iterator = [
-                        file
-                        for file in iterator
-                        if file.name not in filenames_csv
-                    ]
 
+            if folder_FITS_path.is_file() and not folder_FITS_path.is_dir():
+                print(f'only one file detected: {str(folder_FITS_path)}')
+                iterator = iter([folder_FITS_path])
+                if update and folder_FITS_path.name in filenames_csv:
+                    print(f'{folder_FITS_path.name} is already in csv')
+                    return None
+            elif update:
+                iterator = (
+                    file
+                    for file in folder_FITS_path.rglob("*.fits")
+                    if file.name not in filenames_csv and all(
+                        err not in file.as_posix() for err in EXCEPT_FOLDER
+                    )  # remove all old files and file already incsv
+                )
+            else:
+                iterator = (
+                    file
+                    for file in folder_FITS_path.rglob("*.fits")
+                    if all(err not in file.as_posix() for err in EXCEPT_FOLDER)
+                )
+            # print('Found {} files.'.format(str(len(iterator))))
+
+            with ProcessPoolExecutor(max_workers=4) as executor:
+                # MAX WORKER 4 is arbitrary !!
                 futures = {
                     executor.submit(metadata_creator, file): file
                     for file in iterator
@@ -406,18 +408,24 @@ def browse_save(
                     for future in as_completed(futures):
                         try:
                             dict_metadata = future.result()
-                            if dict_metadata: # is not None
+                            if dict_metadata:  # is not None
                                 if create_csv:
-                                    writer.writerows([dict_metadata.values()])
+                                    writer.writerow(dict_metadata.values())
                         except Exception as exc:
                             print(f"Error for {futures[future]}: {exc}")
                         bar()
 
-
         else:
-            for e in alive_it(iterator):
+            if folder_FITS_path.is_file() and not folder_FITS_path.is_dir():
+                print(f'only one file detected: {str(folder_FITS_path)}')
+                iterator = iter([folder_FITS_path])
+            else:
+                iterator = folder_FITS_path.rglob("*")
+            print('Found {} files.'.format(str(len(iterator))))
+
+            for e in alive_it(list(iterator)):
                 # if element is folder create equivalent folder in metadata folder
-                if any(err in e.as_posix() for err in ["old", "misc", "Original", "Revised", "misc"]):
+                if any(err in e.as_posix() for err in EXCEPT_FOLDER):
                     continue
                 if e.is_dir() and create_json:
                     target = folder_metadata_path / e.relative_to(folder_FITS_path)
