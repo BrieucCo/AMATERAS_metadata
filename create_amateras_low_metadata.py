@@ -262,15 +262,32 @@ def create_low_metadata(file_FITS):
 
 def verify_input_paths(paths, defaults='low'):
 
-    if defaults == 'low':
+    if defaults == 'lowex':
         default_folder_fits = "./examples/low/"
         default_folder_metadata = "./lowmetadata/"
-    elif defaults == 'high16':
+    elif defaults == 'high16ex':
         default_folder_fits = "./examples/high16/"
         default_folder_metadata = "./high16metadata/"
-    elif defaults == 'high08':
+    elif defaults == 'high08ex':
         default_folder_fits = "./examples/high08/"
         default_folder_metadata = "./high08metadata/"
+    elif defaults == 'low':
+        default_folder_fits = "/db/IPRT-SUN/DATA2/"
+        default_folder_metadata = "./lowmetadata/"
+    elif defaults == 'high16':
+        default_folder_fits = "/db/IPRT-SUN/l1/high16/"
+        default_folder_metadata = "./high16metadata/"
+    elif defaults == 'high08':
+        default_folder_fits = "/db/IPRT-SUN/l1/high08/"
+        default_folder_metadata = "./high08metadata/"
+    elif defaults:
+        default_folder_fits = defaults
+        default_folder_metadata = defaults + "metadata"
+    else:
+        default_folder_fits = "."
+        default_folder_metadata = "./metadata/"
+
+
 
     """ Verify the inputs if any
     Returns pathlib of the folders"""
@@ -368,7 +385,6 @@ def browse_save(
                 if update:
                     if e.name in filenames_csv:
                         continue
-                print(e.name)
                 dict_metadata = metadata_creator(e)
                 if dict_metadata:  # is not None:
                     # Create json file in folder_metadata
