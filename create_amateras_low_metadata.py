@@ -308,11 +308,14 @@ def verify_input_paths(paths, defaults='low'):
         create_csv, create_json = bool(int(paths[3])), bool(int(paths[4]))
     else:
         create_csv, create_json = True, False
+        print("create_csv, create_json not given. Using default: " +
+        f"create_csv={create_csv}, create_json={create_csv}")
 
     if len(paths) >= 6:
         update = bool(int(paths[5]))
     else:
         update = True
+        print(f"update not given. Using default: update={update}")
 
     if folder_metadata[-1] != "/":
         folder_metadata += "/"
@@ -343,7 +346,7 @@ def browse_save(
     metadata_creator,
     create_csv=True,
     create_json=True,
-    update=False
+    update=True
 ):
     if not create_csv and update:
         raise Exception("Update is not possible with create_csv = False")
