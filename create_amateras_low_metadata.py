@@ -15,6 +15,9 @@ except ImportError:
     # pip install alive-progress
     alive_it = lambda x: x
 
+EXCEPT_FOLDER = ["old", "misc", "Original", "Revised", "misc"]  # folder to be ignored
+
+
 METADATA_KEYS = [
     "granule_uid",
     "granule_gid",
@@ -356,9 +359,8 @@ def browse_save(
         mode = "w"
     with open(csv_filename, mode=mode, newline='') as csvfile:
         if update:
-            filenames_csv = []
-            for row in csv.DictReader(csvfile):
-                filenames_csv.append(row['file_name'])
+            filenames_csv = {row['file_name'] for row in csv.DictReader(csvfile)}
+
 
 
         # Initialize csv file
@@ -368,16 +370,14 @@ def browse_save(
             writer.writerows([METADATA_KEYS])
         print('Browse folder...')
         # Browse folder_FITS
-        if folder_FITS_path.is_file and not folder_FITS_path.is_dir:
+        if folder_FITS_path.is_file() and not folder_FITS_path.is_dir():
             print(f'only one file detected: {str(folder_FITS_path)}')
-            iterator = [folder_FITS_path]
+            iterator = iter([folder_FITS_path])
         else:
-            iterator = list(folder_FITS_path.rglob("*"))
+            iterator = [file for file in folder_FITS_path.rglob("*") if all(err not in file.as_posix() for err in EXCEPT_FOLDER)]
         print('Found {} files.'.format(str(len(iterator))))
         for e in alive_it(iterator):
             # if element is folder create equivalent folder in metadata folder
-            if any(err in e.as_posix() for err in ["old", "misc", "Original", "Revised", "misc"]):
-                continue
             if e.is_dir() and create_json:
                 target = folder_metadata_path / e.relative_to(folder_FITS_path)
                 target.mkdir(parents=True, exist_ok=True)
