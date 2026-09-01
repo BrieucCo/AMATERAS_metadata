@@ -8,12 +8,17 @@ import csv
 from pathlib import Path
 # import logging
 # import warnings
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 try:
-    from alive_progress import alive_it
+    from alive_progress import alive_it, alive_bar
 except ImportError:
     # pip install alive-progress
     alive_it = lambda x: x
+    from contextlib import contextmanager
+    @contextmanager
+    def alive_bar(*args, **kwargs):
+        yield lambda *a, **k: None
 
 METADATA_KEYS = [
     "granule_uid",
@@ -343,7 +348,8 @@ def browse_save(
     metadata_creator,
     create_csv=True,
     create_json=True,
-    update=False
+    update=False,
+    multiprocess = True
 ):
     if not create_csv and update:
         raise Exception("Update is not possible with create_csv = False")
@@ -371,35 +377,73 @@ def browse_save(
         else:
             iterator = list(folder_FITS_path.rglob("*"))
         print('Found {} files.'.format(str(len(iterator))))
-        for e in alive_it(iterator):
-            # if element is folder create equivalent folder in metadata folder
-            if any(err in e.as_posix() for err in ["old", "misc", "Original", "Revised", "misc"]):
-                continue
-            if e.is_dir() and create_json:
-                target = folder_metadata_path / e.relative_to(folder_FITS_path)
-                target.mkdir(parents=True, exist_ok=True)
-
-            # If element is fits create a python dict containing metadata
-
-            elif e.name.endswith('.fits'):  # if fits
+        
+        if multiprocess:
+            if create_json:
+                raise NotImplementedError(
+                    "creat_json and multiprocess are currently incompatible"
+                )
+            with ProcessPoolExecutor() as executor:
+                iterator = [
+                    file
+                    for file in iterator
+                    if ((file.name.endswith('.fits')) and all(
+                        err not in file.as_posix() for err in ["old", "misc", "Original", "Revised", "misc"]
+                    ))
+                ]
                 if update:
-                    if e.name in filenames_csv:
-                        continue
-                dict_metadata = metadata_creator(e)
-                if dict_metadata:  # is not None:
-                    # Create json file in folder_metadata
-                    if create_json:
-                        json_name = folder_metadata_path / (
-                            e.parent.relative_to(folder_FITS_path) / (
-                                e.name[:-5] + "_metadata.json"
+                    iterator = [
+                        file
+                        for file in iterator
+                        if file.name not in filenames_csv
+                    ]
+
+                futures = {
+                    executor.submit(metadata_creator, file): file
+                    for file in iterator
+                }
+                with alive_bar(len(iterator), force_tty=True) as bar:
+                    for future in as_completed(futures):
+                        try:
+                            dict_metadata = future.result()
+                            if dict_metadata: # is not None
+                                if create_csv:
+                                    writer.writerows([dict_metadata.values()])
+                        except Exception as exc:
+                            print(f"Error for {futures[future]}: {exc}")
+                        bar()
+
+
+        else:
+            for e in alive_it(iterator):
+                # if element is folder create equivalent folder in metadata folder
+                if any(err in e.as_posix() for err in ["old", "misc", "Original", "Revised", "misc"]):
+                    continue
+                if e.is_dir() and create_json:
+                    target = folder_metadata_path / e.relative_to(folder_FITS_path)
+                    target.mkdir(parents=True, exist_ok=True)
+
+                # If element is fits create a python dict containing metadata
+
+                elif e.name.endswith('.fits'):  # if fits
+                    if update:
+                        if e.name in filenames_csv:
+                            continue
+                    dict_metadata = metadata_creator(e)
+                    if dict_metadata:  # is not None:
+                        # Create json file in folder_metadata
+                        if create_json:
+                            json_name = folder_metadata_path / (
+                                e.parent.relative_to(folder_FITS_path) / (
+                                    e.name[:-5] + "_metadata.json"
+                                )
                             )
-                        )
-                        with open(json_name, "w") as json_file:
-                            json.dump(dict_metadata, json_file, indent=4)
-                        # print("Metadata successfully saved to " + json_name.name)
-                    # Add row in csv file
-                    if create_csv:
-                        writer.writerows([dict_metadata.values()])
+                            with open(json_name, "w") as json_file:
+                                json.dump(dict_metadata, json_file, indent=4)
+                            # print("Metadata successfully saved to " + json_name.name)
+                        # Add row in csv file
+                        if create_csv:
+                            writer.writerows([dict_metadata.values()])
 
     if not create_csv:
         os.remove(csv_filename)
