@@ -21,7 +21,10 @@ except ImportError:
     def alive_bar(*args, **kwargs):
         yield lambda *a, **k: None
 
+
+
 EXCEPT_FOLDER = ["old", "misc", "Original", "Revised", "misc"]  # folder to be ignored
+
 
 METADATA_KEYS = [
     "granule_uid",
@@ -314,11 +317,14 @@ def verify_input_paths(paths, defaults='low'):
         create_csv, create_json = bool(int(paths[3])), bool(int(paths[4]))
     else:
         create_csv, create_json = True, False
+        print("create_csv, create_json not given. Using default: " +
+        f"create_csv={create_csv}, create_json={create_csv}")
 
     if len(paths) >= 6:
         update = bool(int(paths[5]))
     else:
         update = True
+        print(f"update not given. Using default: update={update}")
 
     if folder_metadata[-1] != "/":
         folder_metadata += "/"
@@ -361,6 +367,8 @@ def browse_save(
     with open(csv_filename, mode=mode, newline='') as csvfile:
         if update:
             filenames_csv = {row['file_name'] for row in csv.DictReader(csvfile)}
+
+
 
         # Initialize csv file
         if create_csv:
@@ -420,13 +428,11 @@ def browse_save(
                 print(f'only one file detected: {str(folder_FITS_path)}')
                 iterator = iter([folder_FITS_path])
             else:
-                iterator = folder_FITS_path.rglob("*")
+                iterator = [file for file in folder_FITS_path.rglob("*") if all(err not in file.as_posix() for err in EXCEPT_FOLDER)]
             print('Found {} files.'.format(str(len(iterator))))
 
             for e in alive_it(list(iterator)):
                 # if element is folder create equivalent folder in metadata folder
-                if any(err in e.as_posix() for err in EXCEPT_FOLDER):
-                    continue
                 if e.is_dir() and create_json:
                     target = folder_metadata_path / e.relative_to(folder_FITS_path)
                     target.mkdir(parents=True, exist_ok=True)
