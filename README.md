@@ -1,6 +1,6 @@
 # AMATERAS_metadata
 
-Python tools to generate **metadata** (in [EPN-TAP](https://voparis-confluence.obspm.fr/pages/viewpage.action?pageId=13697132) format) for the solar radio observations recorded by [**AMATERAS**](https://pparc.gp.tohoku.ac.jp/research/iprt/), the wideband metric radio spectro-polarimeter at Itate Observatory (Tohoku University), as part of the **IPRT (Iitate Planetary Radio Telescope)** network.
+Python tools to generate **metadata** for [VESPA tap server](http://padc-tap-tohoku.obspm.fr/) (in [EPN-TAP](https://voparis-confluence.obspm.fr/pages/viewpage.action?pageId=13697132) format) for the solar radio observations recorded by [**AMATERAS**](https://pparc.gp.tohoku.ac.jp/research/iprt/)  (the Assembly of Metric-band Aperture TElescope and Real-time Analysis System), the wideband metric radio spectro-polarimeter on the **Iitate Planetary Radio Telescope (IPRT)** at the Iitate observatory (Tohoku University) in Fukushima prefecture, Japan.
 
 The scripts read the headers of the **FITS** files produced by the instrument and extract the information needed (dates, spectral range, resolution, access paths, etc.) to build metadata records usable by a Virtual Observatory–type service.
 
@@ -45,7 +45,7 @@ python create_amateras_low_metadata.py [fits_folder] [metadata_folder] [create_c
 
 ### Examples
 
-**Recommended use for IPRT server** to update csv files in default folder:
+**Recommended use for IPRT server** to update csv files in default folder (e.g. `/db/IPRT-SUN/DATA2/` for `low`, `/db/IPRT-SUN/l1/high08/` for `high08`, `/db/IPRT-SUN/l1/high16/` for `high16`):
 ```bash
 python create_amateras_low_metadata.py
 python create_amateras_high16_metadata.py
@@ -81,4 +81,4 @@ The full list of keys is available in `metadata_template.csv`.
 
 ## Notes
 
-The computational time for the update of high 16 is expected to be long (30 min)
+The computational time for the update of high 16 is expected to be long (>30 min) due to the large number of files.
