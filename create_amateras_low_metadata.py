@@ -380,7 +380,7 @@ def browse_save(
 
         if create_json and multiprocess:
             print(
-                "creat_json and multiprocess are currently incompatible, not using multiprocessing (might be slower)"
+                "create_json and multiprocess are currently incompatible, not using multiprocessing (might be slower)"
             )
             multiprocess = False
 

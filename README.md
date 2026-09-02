@@ -41,7 +41,7 @@ python create_amateras_low_metadata.py [fits_folder] [metadata_folder] [create_c
 - `create_json` (0/1): whether to generate a per-FITS-file JSON metadata file (default: `0`).
 - `update` (0/1): only process FITS files not already present in the existing CSV, instead of rebuilding the whole table (default: `1`).
 
-⚠️ On the `feature-multiprocessing` branch, the `multiprocess` parameter (enabled by default) speeds up processing by parallelizing FITS file reading, but it is currently **incompatible with JSON generation** (`create_json=1`): combining both raises a `NotImplementedError`. Set `multiprocess=False` if you need the individual JSON files.
+ℹ️ The `multiprocess` parameter (enabled by default) speeds up processing by parallelizing FITS file reading, but it is currently **incompatible with JSON generation** (`create_json=1`): combining both fold back on setting `multiprocess=False` to get the individual JSON files. This might result in a longer computation time.
 
 ### Examples
 
