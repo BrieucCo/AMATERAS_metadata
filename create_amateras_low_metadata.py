@@ -378,12 +378,13 @@ def browse_save(
         print('Browse folder...')
         # Browse folder_FITS
 
-        if multiprocess:
-            if create_json:
-                raise NotImplementedError(
-                    "creat_json and multiprocess are currently incompatible"
-                )
+        if create_json and multiprocess:
+            print(
+                "creat_json and multiprocess are currently incompatible, not using multiprocessing (might be slower)"
+            )
+            multiprocess = False
 
+        if multiprocess:
             if folder_FITS_path.is_file() and not folder_FITS_path.is_dir():
                 print(f'only one file detected: {str(folder_FITS_path)}')
                 iterator = iter([folder_FITS_path])

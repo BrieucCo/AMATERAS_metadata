@@ -12,3 +12,4 @@ lowmetadatatest/
 *.csv
 __pycache__/
 .~lock.*
+.vscode/ltex.dictionary.en-US.txt
